@@ -1,0 +1,57 @@
+[project]
+name = "hrsm"
+version = "0.1.0"
+description = "High-Resolution Soil Moisture (HRSM) mapping: ML + LGAR/EnKF pipeline notebooks"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.13,<3.14"
+# Pure-Python / PyPI-only dependencies of HRSM_MAPPING_ML_pipeline_multiplePoints_lgar_inputs.ipynb.
+# Compiled/geospatial dependencies (GDAL, rasterio, netCDF4, lightgbm, ...) come from conda-forge
+# via [tool.pixi.dependencies] below.
+dependencies = [
+  "permetrics==2.0.0",
+  "mapie==1.1.0",
+  "xee",
+]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64"]
+
+[tool.pixi.dependencies]
+python = "3.13.*"
+# ML. scikit-learn 1.5.2 matches the notebook's `pip install scikit-learn==1.5.2`, but the
+# trainedML/*_scaler.joblib files were pickled with 1.7.2 (1.5.2 emits InconsistentVersionWarning
+# on load; 1.7.2 loads all 18 models cleanly).
+scikit-learn = "==1.5.2"
+lightgbm = "*"
+joblib = "*"
+numpy = "*"
+pandas = "*"
+scipy = "*"
+# geospatial / data formats
+gdal = "*"          # `import osgeo.gdal`
+rasterio = "*"
+geopandas = "*"
+shapely = "*"
+xarray = "*"
+netcdf4 = "*"
+# Google Earth Engine
+earthengine-api = "*"
+geemap = "*"
+folium = "*"
+# plotting / notebook
+matplotlib = "*"
+seaborn = "*"
+pillow = "*"
+tqdm = "*"
+ipywidgets = "*"
+ipykernel = "*"
+jupyterlab = "*"
+
+[tool.pixi.target.osx-arm64.tasks]
+# native LGAR/EnKF binaries (needs Xcode Command Line Tools); linux-64 uses the committed LGAR/ binaries
+build-lgar = "bash LGAR/build_macos.sh"
+
+[tool.pixi.tasks]
+lab = "jupyter lab"
