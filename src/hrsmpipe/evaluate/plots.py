@@ -377,6 +377,24 @@ def validation_frame(site_df: pd.DataFrame) -> pd.DataFrame:
     return out.dropna()
 
 
+def study_obs_window(
+    study_df: pd.DataFrame, ours_df: pd.DataFrame | None = None
+) -> tuple[pd.Timestamp, pd.Timestamp] | None:
+    """
+    first/last hour with a study observation, clipped to ours_df's time span if given
+    None when there are no observations or the clipped window is empty
+    """
+    obs_any = study_df[["observation_sly", "observation_rly"]].dropna(how="all")
+    if obs_any.empty:
+        return None
+    start, end = obs_any.index[0], obs_any.index[-1]
+    if ours_df is not None:
+        if ours_df.empty:
+            return None
+        start, end = max(start, ours_df.index[0]), min(end, ours_df.index[-1])
+    return (start, end) if start <= end else None
+
+
 def plot_study_site(
     study_df: pd.DataFrame,
     site_id: int,
@@ -390,9 +408,12 @@ def plot_study_site(
     study_df: original-study hourly csv for one site, time index
     ours_enkf_df: optional, our merged site frame with time index -> adds our LGAR daily mean
     precip: optional hourly precipitation (mm) series with time index -> daily totals as inverted bars
+    the time window is the study observation span, clipped to ours_enkf_df's span if given
     """
-    obs_any = study_df[["observation_sly", "observation_rly"]].dropna(how="all")
-    time_start, time_end = obs_any.index[0], obs_any.index[-1]
+    window = study_obs_window(study_df, ours_enkf_df)
+    if window is None:
+        raise ValueError(f"site {site_id}: no study observations within the plotted time span")
+    time_start, time_end = window
 
     fig, axes = plt.subplots(2, 1, figsize=(20, 8))
     for ax, layer, layer_name in zip(axes, ["sly", "rly"], ["Surface", "Rootzone"], strict=True):
@@ -414,15 +435,17 @@ def plot_study_site(
         ax.set_xlim(time_start, time_end)
         ax.set_ylim(y_min * (1 - buffer_factor), y_max * (1 + buffer_factor))
         ax.set_title(
-            f"n_obs={obs.notna().sum()} n_ml={len(ml)} {layer_name} Soil Moisture for {site_id}: {station_code}"
+            f"n_obs={obs[time_start:time_end].notna().sum()} n_ml={len(ml[time_start:time_end])} {layer_name} Soil Moisture for {site_id}: {station_code}"
         )
         ax.set_xlabel("time")
         ax.set_ylabel("soil moisture ($m^3/m^3$)")
         ax.legend(loc="upper left")
         ax.grid(True)
 
-        if precip is not None:
-            daily_precip = precip.resample("D").sum()[time_start:time_end]
+        daily_precip = (
+            precip.resample("D").sum()[time_start:time_end] if precip is not None else None
+        )
+        if daily_precip is not None and daily_precip.max() > 0:  # NaN (empty) or all-dry: no bars
             ax2 = ax.twinx()
             ax2.set_ylim(daily_precip.max() * 4, 0)  # Invert and scale precip - clear sm plots
             ax2.bar(daily_precip.index, daily_precip, color="tab:blue", alpha=0.5)

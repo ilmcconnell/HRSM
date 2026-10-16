@@ -124,6 +124,44 @@ def test_plots_render_headless(tmp_path):
     assert (tmp_path / "paper.png").stat().st_size > 1000
 
 
+def _study_frame(start, n_days):
+    idx = pd.date_range(start, periods=24 * n_days, freq="h", name="time")
+    df = pd.DataFrame(index=idx)
+    for layer in ("sly", "rly"):
+        df[f"observation_{layer}"] = 0.25
+        df[f"analysis_sm_{layer}"] = 0.24
+        ml = np.full(len(idx), np.nan)
+        ml[::24] = 0.26
+        df[f"{layer}_sm_ml_arr"] = ml
+    return df
+
+
+def test_study_window_clipped_to_our_run():
+    ours = plots._naive_index(_site_frame())  # 2024-06-01 .. 2024-06-06 23:00
+    study = _study_frame("2024-05-30", 4)  # 2024-05-30 .. 2024-06-02 23:00
+    start, end = plots.study_obs_window(study, ours)
+    assert start == pd.Timestamp("2024-06-01") and end == pd.Timestamp("2024-06-02 23:00")
+    fig = plots.plot_study_site(study, 7, "ALTN", ours_enkf_df=ours, precip=ours["precip_mm"])
+    assert matplotlib.dates.num2date(fig.axes[0].get_xlim()[0]).replace(tzinfo=None) == start
+
+
+def test_study_window_without_overlap():
+    ours = plots._naive_index(_site_frame())
+    study = _study_frame("2023-05-13", 3)
+    assert plots.study_obs_window(study, ours) is None
+    with pytest.raises(ValueError, match="no study observations"):
+        plots.plot_study_site(study, 7, "ALTN", ours_enkf_df=ours, precip=ours["precip_mm"])
+
+
+def test_study_plot_dry_window_skips_precip_axis():
+    ours = plots._naive_index(_site_frame())
+    ours["precip_mm"] = 0.0
+    fig = plots.plot_study_site(
+        _study_frame("2024-06-01", 3), 7, "ALTN", ours_enkf_df=ours, precip=ours["precip_mm"]
+    )
+    assert len(fig.axes) == 2  # no twin precip axes
+
+
 def test_paper_plot_without_observations_does_not_crash():
     df = _site_frame()
     df["observation_sly"] = np.nan

@@ -63,6 +63,12 @@ def evaluate(cfg: RunConfig, sites: SiteSet | None = None) -> None:
                 study_dir / f"EnKF_LGAR_{sid}_hourly.csv", parse_dates=["time"], index_col="time"
             )
             ours = plots._naive_index(df)
+            if plots.study_obs_window(study, ours) is None:
+                log.warning(
+                    "site %s: run window does not overlap study observations: no study comparison plot",
+                    sid,
+                )
+                continue
             fig = plots.plot_study_site(
                 study, sid, code, ours_enkf_df=ours, precip=ours["precip_mm"]
             )
