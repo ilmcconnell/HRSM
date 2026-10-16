@@ -1,2 +1,16 @@
-LGAR/build/
+/LGAR/build/
 .pixi/
+# hrsmpipe
+__pycache__/
+*.pyc
+*.bin
+src/hrsmpipe/data/lgar_src/**/build/
+/data/
+/data_backup/
+/data_before_terrain_fix_20261014/
+/data_before_terrain_fix_*/
+/runs/
+.ruff_cache/
+.pytest_cache/
+
+site/

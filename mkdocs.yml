@@ -1,0 +1,13 @@
+site_name: hrsmpipe
+site_description: HRSM soil moisture pipeline (ML + LGAR/EnKF)
+docs_dir: docs
+exclude_docs: |
+  hrsmpipe_execution_prompt.md
+theme:
+  name: readthedocs
+nav:
+  - Home: index.md
+  - Stages: stages.md
+  - Config reference: config_reference.md
+  - Provenance and re-runs: provenance.md
+  - Parity with the notebook: parity.md

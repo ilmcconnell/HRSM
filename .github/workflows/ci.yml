@@ -1,0 +1,22 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint-and-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          pixi-version: v0.80.0
+          locked: true
+          cache: true
+      - name: ruff (lint + format check)
+        run: pixi run lint
+      - name: unit tests (no data, no Earth Engine)
+        run: pixi run pytest -m "not data and not gee"
+      - name: docs build
+        run: pixi run docs

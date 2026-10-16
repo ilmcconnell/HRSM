@@ -95,6 +95,29 @@ The data assimilation (DA) step is executed after obtaining ML results. Follow t
 
 ---
 
+### 📦 `hrsmpipe`: the pipeline as a package
+
+The notebook pipeline (now in `notebooks/legacy/`) is also available as the installable package **`hrsmpipe`**
+(`src/hrsmpipe/`): ERA5-Land / Sentinel-1/2 / HLSL30 features → the pre-trained models in `trainedML/` → post-processing →
+LGAR and LGAR + EnKF → evaluation, driven by **one TOML file per run** and runnable headlessly on macOS arm64, Linux
+x86-64 and Colab. Every run writes `config.resolved.toml` (all keys plus git provenance) so it can be repeated verbatim.
+
+```bash
+pixi install
+pixi run hrsmpipe init my_run.toml          # config with every key at its default
+pixi run hrsmpipe my_run.toml               # run all stages (unchanged stages are skipped)
+pixi run hrsmpipe configs/study_sites.toml  # the original study's three sites
+pixi run hrsmpipe build-lgar my_run.toml    # compile LGAR / EnKF_LGAR from the bundled C++ sources
+pixi run test                               # unit tests; `pixi run test -m data` checks parity with the notebook
+```
+
+`notebooks/hrsmpipe_walkthrough.ipynb` shows the Python API, and `pixi run docs` builds the documentation in `docs/`
+(stages, generated config reference, provenance, parity with the notebook).
+The compiled binaries in `LGAR/` remain for the notebook workflow; the package builds its own into
+`<data_root>/bin/<platform>/`.
+
+---
+
 ### 🔜 Future Plans
 
 This is an ongoing project. We are working toward publishing the **CONUS cropland soil moisture dataset**.

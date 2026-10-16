@@ -1,0 +1,130 @@
+[run]
+name = "wisconet_2021_2026"
+# "" -> $HRSM_DATA_DIR
+data_root = ""
+start = "2021-07-16"
+end = "2026-02-10"
+
+[sites]
+csv = "pkg:wisconet_stations.csv"
+include = []
+
+[gee]
+project = "run-hrsm"
+workers_era5 = 2
+workers_satellite = 4
+window_hours = 15
+sample_scale_m = 100.0
+# "native" -> bd_0_5.projection().nominalScale() (30 m)
+polaris_scale = "native"
+# "native" -> each asset's nominalScale()
+terrain_scale = "native"
+era5_lead_hours = 144
+
+[obs]
+source = "wisconet_api"
+path = ""
+timezone = "UTC"
+rootzone_depths_cm = [
+    5.0,
+    10.0,
+    20.0,
+    50.0,
+    100.0,
+]
+# midpoint rule; the validated legacy array used [2.5, 7.5, 20, 40, 25]
+rootzone_weights = [
+    7.5,
+    7.5,
+    20.0,
+    40.0,
+    25.0,
+]
+
+[obs.columns]
+time = "time"
+site_id = "site_id"
+sm_surface = "sm_surface"
+sm_rootzone = "sm_rootzone"
+precip_mm = "precip_mm"
+air_temp_c = ""
+solar_w = ""
+
+[features]
+smap_constant = 0.3
+hls_angle_constant = 90.0
+s1_invalid_above = 1000.0
+# "raw": rows 0..N-1 keep raw hourly values (notebook) | "lead": compute from era5_lead_hours
+era5_lookback_warmup = "raw"
+
+[models]
+dir = ""
+
+[postproc]
+reference_sensor = "sentinel2"
+sd_divisor = 3.29
+sd_floor = 0.02
+hour_spread = 1
+
+[forcing]
+interval_shift_hours = 0
+
+[forcing.precip]
+source = "mesonet"
+fallback = "era5"
+era5_zero_below_mm = 0.01
+
+[forcing.pet]
+source = "era5"
+fallback = "era5"
+alpha = 1.3
+gamma = 66.8
+zero_below = 1e-06
+
+[lgar]
+# "" -> <data_root>/bin/<platform>
+bin_dir = ""
+ensemble_size = 20
+model_sd_sly = 0.03
+model_sd_rly = 0.02
+# 0 keeps random_device (original behaviour)
+seed = 0
+# 0 -> os.cpu_count()
+workers = 0
+verbosity = "none"
+layer_thickness_cm = [
+    5.0,
+    10.0,
+    15.0,
+    30.0,
+    40.0,
+]
+giuh_ordinates = [
+    0.06,
+    0.51,
+    0.28,
+    0.12,
+    0.03,
+]
+timestep_h = 1.0
+field_capacity_psi = 340.9
+wilting_point_psi = 15495.0
+initial_psi = 2000.0
+initial_sm_perturb = 0.0
+soil_params_file = ""
+TO_enabled = false
+adaptive_timestep = false
+free_drainage_enabled = false
+use_closed_form_G = false
+root_zone_depth_cm = 60.0
+mbal_tol = 80.0
+ponded_depth_max_cm = 0.0
+forcing_resolution_h = 1.0
+max_valid_soil_types = 12
+
+[lgar.site_overrides]
+
+[evaluate]
+study_dir = ""
+plots = true
+time_window = []
